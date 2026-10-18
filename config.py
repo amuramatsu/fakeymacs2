@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261007_01"
+fakeymacs_version = "20261018_01"
 
 import time
 import os
@@ -2153,6 +2153,12 @@ def configure(keymap):
             return window.isMinimized()
         else:
             return window.is_minimized()
+
+    def isMaximized(window):
+        if keyhac_version == 1:
+            return window.isMaximized()
+        else:
+            return window.is_maximized()
 
     def updateKeymap(force_update=False):
         fakeymacs.force_update = force_update
