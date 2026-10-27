@@ -3373,8 +3373,6 @@ def configure(keymap):
                                class_name=window.class_name,
                                window_title=window.title,
                                native=window)
-            else:
-                return None
 
         if (window and
             getProcessName(window) == "explorer.exe" and
