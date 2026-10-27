@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261018_01"
+fakeymacs_version = "20261027_01"
 
 import time
 import os
@@ -56,7 +56,7 @@ except:
     from keyhac.ui.candidate_row import CandidateRow
     from puikit import DEFAULT_STYLE, Font, Style
 
-    WinInputHook.SLOW_CALLBACK_SECONDS = 1.0
+    # WinInputHook.SLOW_CALLBACK_SECONDS = 1.0
 
     VK_A          = WIN_VK["A"]
     VK_Z          = WIN_VK["Z"]
