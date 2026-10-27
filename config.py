@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261007_01"
+fakeymacs_version = "20261027_02"
 
 import time
 import os
@@ -56,7 +56,7 @@ except:
     from keyhac.ui.candidate_row import CandidateRow
     from puikit import DEFAULT_STYLE, Font, Style
 
-    WinInputHook.SLOW_CALLBACK_SECONDS = 1.0
+    # WinInputHook.SLOW_CALLBACK_SECONDS = 1.0
 
     VK_A          = WIN_VK["A"]
     VK_Z          = WIN_VK["Z"]
@@ -2154,6 +2154,12 @@ def configure(keymap):
         else:
             return window.is_minimized()
 
+    def isMaximized(window):
+        if keyhac_version == 1:
+            return window.isMaximized()
+        else:
+            return window.is_maximized()
+
     def updateKeymap(force_update=False):
         fakeymacs.force_update = force_update
         keymap.updateKeymap()
@@ -3362,10 +3368,11 @@ def configure(keymap):
             window = keymap.getTopLevelWindow()
         else:
             window = keymap.get_active_window()
-            window = Focus(app_name=window.app_name,
-                           class_name=window.class_name,
-                           window_title=window.title,
-                           native=window)
+            if window:
+                window = Focus(app_name=window.app_name,
+                               class_name=window.class_name,
+                               window_title=window.title,
+                               native=window)
 
         if (window and
             getProcessName(window) == "explorer.exe" and

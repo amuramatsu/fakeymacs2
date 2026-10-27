@@ -91,7 +91,7 @@ except:
 
 def minimize_window():
     window = getTopLevelWindow()
-    if window and not window.isMinimized():
+    if window and not isMinimized(window):
         window.minimize()
         delay()
         window_list = getWindowList()
@@ -108,7 +108,11 @@ def restore_minimized_window():
             window_list.reverse()
         window_list[0].restore()
 
-display_areas = [monitor[1] for monitor in pyauto.Window.getMonitorInfo()]
+if keyhac_version == 1:
+    display_areas = [monitor[1] for monitor in pyauto.Window.getMonitorInfo()]
+else:
+    display_areas = keymap.screen_frames()
+
 display_cnt = len(display_areas)
 
 max_rect = [min([left   for left, top, right, bottom in display_areas]) - 8,
@@ -118,39 +122,57 @@ max_rect = [min([left   for left, top, right, bottom in display_areas]) - 8,
 
 window_dict = {}
 
+def setRect(window, rect):
+    if keyhac_version == 1:
+        window.setRect(rect)
+    else:
+        window.set_frame(*rect)
+
+def getRect(window):
+    if keyhac_version == 1:
+        return window.getRect()
+    else:
+        return window.get_frame()
+
+def toKey(window):
+    if keyhac_version == 1:
+        return window
+    else:
+        return window.native
+
 def resize_window(forward_direction):
     def _setRect(rect):
         # setRect 関数を２回繰り返して実行しているのは、DPI スケールが異なるディスプレイがある
         # 場合、表示されているウィンドウの位置によってウィンドウを表示するスケールが決まるため、
         # 一回目でウインドウの位置決めをして、二回目で表示スケールを確定させている。
-        window.setRect(rect)
-        window.setRect(rect)
+        setRect(window, rect)
+        setRect(window, rect)
 
     window = getTopLevelWindow()
     if window:
         if display_cnt == 1:
-            if window.isMaximized():
+            if isMaximized(window):
                 window.restore()
             else:
                 window.maximize()
         else:
-            if window.isMaximized():
+            if isMaximized(window):
                 if forward_direction:
                     window.restore()
                     delay()
-                    if window not in window_dict:
-                        window_dict[window] = list(window.getRect())
+                    if toKey(window) not in window_dict:
+                        window_dict[toKey(window)] = list(getRect(window))
                     _setRect(max_rect)
                 else:
-                    if window in window_dict:
-                        _setRect(window_dict[window])
-                        del window_dict[window]
+                    if toKey(window) in window_dict:
+                        _setRect(window_dict[toKey(window)])
+                        del window_dict[toKey(window)]
                     else:
                         window.restore()
             else:
-                if window in window_dict:
-                    _setRect(window_dict[window])
-                    del window_dict[window]
+                if toKey(window) in window_dict:
+                    _setRect(window_dict[toKey(window)])
+                    del window_dict[toKey(window)]
 
                     if not forward_direction:
                         window.maximize()
@@ -158,7 +180,7 @@ def resize_window(forward_direction):
                     if forward_direction:
                         window.maximize()
                     else:
-                        window_dict[window] = list(window.getRect())
+                        window_dict[toKey(window)] = list(getRect(window))
                         _setRect(max_rect)
 
 def maximize_window():
@@ -201,7 +223,7 @@ def switchWindows(window_list_func, direction):
     window_list = window_list_func()
 
     # ２つのリストに差異があるか？
-    if set(window_list) ^ set(fakeymacs.window_list):
+    if set([toKey(win) for win in window_list]) ^ set([toKey(win) for win in fakeymacs.window_list]):
         fakeymacs.window_list = window_list
 
     if fakeymacs.window_list:
@@ -233,7 +255,7 @@ def transpose_windows():
             if len(window_list) >= 2:
                 first_window = None
                 for window in window_list:
-                    window_rect = window.getRect()
+                    window_rect = getRect(window)
                     for display_area in display_areas:
                         if (window_rect[0] >= display_area[0] - 16 and
                             window_rect[1] >= display_area[1] - 16 and
