@@ -15,7 +15,8 @@
 
 print(startupString())
 
-exec(readConfigExtension(r"fix_clipboard.py"), dict(globals(), **locals()))
+if keyhac_version == 1:
+    exec(readConfigExtension(r"fix_clipboard.py"), dict(globals(), **locals()))
 keymap.editor = r"notepad.exe"
 
 ####################################################################################################
@@ -429,10 +430,17 @@ if fc.use_emacs_ime_mode:
 # CTRL-m keymap
 
 # input method と ctrl-h/j/mの切り替え"のみをしたい"アプリケーションソフトを指定する（True を返す）
-def is_ctrlm_target(wnd, fc=fc):
-    if wnd.getProcessName() in fc.ctrlm_target:
-        return True
-    return False
+if keyhac_version == 1:
+    def is_ctrlm_target(wnd, fc=fc):
+        if wnd.getProcessName() in fc.ctrlm_target:
+            return True
+        return False
+else:
+    def is_ctrlm_target(wnd, fc=fc):
+        if getProcessName(wnd) in fc.ctrlm_target:
+            return True
+        return False
+
 if fc.use_emacs_ime_mode:
     def is_ctrlm_target_wo_ime(wnd, fc=fc,
                                is_emacs_ime_mode=is_emacs_ime_mode,
