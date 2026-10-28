@@ -1468,7 +1468,8 @@ def configure(keymap):
             # （setImeStatus(ime_status) を使わないのは、キーボードマクロの再生時に影響がでるため）
             # （RemoteApp を利用する際、IME の切り替えが正常に動作しない場合があるため、その対策を追加）
             if os_keyboard_type == "JP":
-                self_insert_command("A-(243)")()
+                #self_insert_command("A-(243)")()
+                self_insert_command("(243)")()
             else:
                 self_insert_command("A-`")()
 
@@ -2245,6 +2246,8 @@ def configure(keymap):
 
             if keyhac_version == 1:
                 fakeymacs.process_name = window.getProcessName()
+            elif window.app_name is None:
+                fakeymacs.process_name = ""
             else:
                 fakeymacs.process_name = window.app_name + ".exe"
 
