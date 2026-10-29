@@ -1,3 +1,5 @@
 /keyhac.ini
 *~
 *.bak
+/clipboard.json
+/settings.json
