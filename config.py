@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261027_02"
+fakeymacs_version = "20261029_01"
 
 import time
 import os
@@ -3677,6 +3677,15 @@ def configure(keymap):
     if keyhac_version == 2:
         define_key(keymap_lw, "M-b", self_insert_command("C-Left"))
         define_key(keymap_lw, "M-f", self_insert_command("C-Right"))
+
+    ## 「IME の切り替え」のキー設定
+    if keyhac_version == 2:
+        for key in fc.toggle_input_method_key:
+            define_key(keymap_lw, key, toggle_input_method)
+
+        for disable_key, enable_key in fc.set_input_method_key:
+            define_key(keymap_lw, disable_key, disable_input_method)
+            define_key(keymap_lw, enable_key,  enable_input_method)
 
     # 個人設定ファイルのセクション [section-base-2] を読み込んで実行する
     exec(readConfigPersonal("[section-base-2]"), dict(globals(), **locals()))
