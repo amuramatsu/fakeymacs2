@@ -447,10 +447,10 @@ def configure(keymap):
         startup_string_formatter = "Fakeymacs version {}:\n  https://github.com/smzht/fakeymacs\n"
         return startup_string_formatter.format(fakeymacs_version)
 
-    def targetRegexify(target):
+    def targetRegexify(target, ignorecase=False):
         regex = "|".join([fnmatch.translate(app) for app in target if type(app) is str])
         if regex == "": regex = "(?!)" # 絶対にマッチしない正規表現
-        target1 = re.compile(regex)
+        target1 = re.compile(regex, re.IGNORECASE if ignorecase else 0)
         target2 = [app for app in target if type(app) is list]
         return [target1, target2]
 
@@ -1006,7 +1006,7 @@ def configure(keymap):
             ctypes.wintypes.DWORD
         )
 
-        name_change_app = targetRegexify(fc.name_change_app_list)[0]
+        name_change_app = targetRegexify(fc.name_change_app_list, ignorecase=True)[0]
         hook_enabled = True
 
         def _callback(hWinEventHook, event, hwnd, idObject, idChild, dwEventThread, dwmsEventTime):
@@ -1195,19 +1195,20 @@ def configure(keymap):
     fakeymacs.shift_down = False
     fakeymacs.shift_down2 = False
 
-    transparent_target         = targetRegexify(fc.transparent_target)[0]
+    transparent_target         = targetRegexify(fc.transparent_target, ignorecase=True)[0]
     transparent_target_class   = targetRegexify(fc.transparent_target_class)[0]
-    not_clipboard_target       = targetRegexify(fc.not_clipboard_target)[0]
+    not_clipboard_target       = targetRegexify(fc.not_clipboard_target, ignorecase=True)[0]
     not_clipboard_target_class = targetRegexify(fc.not_clipboard_target_class)[0]
     emacs_target_class         = targetRegexify(fc.emacs_target_class)[0]
-    emacs_target               = targetRegexify(fc.emacs_target)
-    not_emacs_target           = targetRegexify(fc.not_emacs_target)
-    ime_target                 = targetRegexify(fc.ime_target)
-    game_app_list              = targetRegexify(fc.game_app_list)
+    emacs_target               = targetRegexify(fc.emacs_target, ignorecase=True)
+    not_emacs_target           = targetRegexify(fc.not_emacs_target, ignorecase=True)
+    ime_target                 = targetRegexify(fc.ime_target, ignorecase=True)
+    game_app_list              = targetRegexify(fc.game_app_list, ignorecase=True)
 
     def is_base_target(window):
         if window != fakeymacs.last_window:
             process_name = getProcessName(window)
+            if process_name: process_name = process_name.lower()
             class_name   = getClassName(window)
 
             if keyhac_version == 1:
@@ -1223,7 +1224,7 @@ def configure(keymap):
 
             if fc.correct_ime_status:
                 if fc.ime == "Google_IME":
-                    if process_name in fc.chromium_browser_list:
+                    if process_name in [ s.lower() for s in fc.chromium_browser_list]:
                         fakeymacs.correct_ime_status = True
                     else:
                         fakeymacs.correct_ime_status = False
@@ -1268,6 +1269,7 @@ def configure(keymap):
             fakeymacs.is_emacs_target_in_previous_window = fakeymacs.is_emacs_target
 
             process_name = getProcessName(window)
+            if process_name: process_name = process_name.lower()
             class_name   = getClassName(window)
 
             fakeymacs.keymap_selected2 = fakeymacs.keymap_selected1
@@ -1276,7 +1278,7 @@ def configure(keymap):
                 if emacs_target_class.match(class_name):
                     fakeymacs.is_emacs_target = True
 
-                elif process_name in fakeymacs.not_emacs_keybind:
+                elif process_name in [ s.lower() for s in fakeymacs.not_emacs_keybind]:
                     fakeymacs.is_emacs_target = False
 
                 elif (emacs_target[0].match(process_name) or
@@ -1295,10 +1297,11 @@ def configure(keymap):
                 reset_undo(reset_counter(reset_mark(lambda: None)))()
                 fakeymacs.ime_cancel = False
 
-                if process_name in fc.emacs_excluded_key:
+                emacs_excluded_key = { k.lower(): v for k, v in fc.emacs_excluded_key.items() }
+                if process_name in emacs_excluded_key:
                     fakeymacs.emacs_excluded_key = [
                         keyStrNormalization(addSideOfModifierKey(specialCharToKeyStr(key)))
-                        for key in fc.emacs_excluded_key[process_name]]
+                        for key in emacs_excluded_key[process_name]]
                 else:
                     fakeymacs.emacs_excluded_key = []
 
@@ -1309,9 +1312,10 @@ def configure(keymap):
     def is_ime_target(window):
         if fakeymacs.force_update or window != fakeymacs.last_window:
             process_name = getProcessName(window)
+            if process_name: process_name = process_name.lower()
 
             if fakeymacs.keymap_selected2 == False:
-                if process_name in fakeymacs.not_ime_keybind:
+                if process_name in [ s.lower() for s in fakeymacs.not_ime_keybind]:
                     setImeStatus(0)
                     fakeymacs.is_ime_target = False
 
@@ -1319,7 +1323,7 @@ def configure(keymap):
                     any(checkWindow(*app, window=window) for app in ime_target[1])):
                     fakeymacs.is_ime_target = True
 
-                elif process_name in fakeymacs.not_emacs_keybind:
+                elif process_name in [ s.lower() for s in fakeymacs.not_emacs_keybind]:
                     if (emacs_target[0].match(process_name) or
                         any(checkWindow(*app, window=window) for app in emacs_target[1])):
                         fakeymacs.is_ime_target = True
@@ -1417,6 +1421,7 @@ def configure(keymap):
 
     def toggle_emacs_keybind():
         process_name = getProcessName()
+        if process_name: process_name = process_name.lower()
         class_name   = getClassName()
 
         if not ((game_app_list[0].match(process_name) or
@@ -1428,7 +1433,7 @@ def configure(keymap):
                 not (not_emacs_target[0].match(process_name) or
                      any(checkWindow(*app) for app in not_emacs_target[1]))):
 
-                if process_name in fakeymacs.not_emacs_keybind:
+                if process_name in [ s.lower() for s in fakeymacs.not_emacs_keybind]:
                     fakeymacs.not_emacs_keybind.remove(process_name)
                     keymap.popBalloon("keybind", "[Enable Emacs keybind]", 1000)
                 else:
@@ -1438,7 +1443,7 @@ def configure(keymap):
             elif (ime_target[0].match(process_name) or
                   any(checkWindow(*app) for app in ime_target[1])):
 
-                if process_name in fakeymacs.not_ime_keybind:
+                if process_name in [ s.lower() for s in fakeymacs.not_ime_keybind ]:
                     fakeymacs.not_ime_keybind.remove(process_name)
                     keymap.popBalloon("keybind", "[Enable IME keybind]", 1000)
                 else:
@@ -2077,7 +2082,7 @@ def configure(keymap):
     def indent_for_tab_command():
         self_insert_command("Tab")()
 
-    keyboard_quit_no_esc_app_list = targetRegexify(fc.keyboard_quit_no_esc_app_list)
+    keyboard_quit_no_esc_app_list = targetRegexify(fc.keyboard_quit_no_esc_app_list, ignorecase=True)
 
     def keyboard_quit(esc=True):
         resetRegion()
@@ -3409,14 +3414,14 @@ def configure(keymap):
 
             process_name2 = getProcessName(window)
 
-            if process_name is None or process_name == process_name2:
+            if process_name is None or process_name.lower() == process_name2.lower():
                 class_name = getClassName(window)
 
                 # ハイフンの前に見えない文字がある場合の対策
                 title = re.sub(r".* ‎- ", r"", getText(window))
 
                 # RemoteApp を利用する際のおまじない
-                if (process_name2 == "mstsc.exe" and
+                if (process_name2.lower() == "mstsc.exe" and
                     class_name == "RAIL_WINDOW" and
                     title == " (リモート)"):
                     pass
