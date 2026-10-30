@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261029_02"
+fakeymacs_version = "20261029_03"
 
 import time
 import os
@@ -3599,6 +3599,8 @@ def configure(keymap):
 
     def lw_exit_search(func):
         def _func():
+            if keyhac_version == 2:
+                setImeStatus(0)
             if fakeymacs.lw_is_searching:
                 self_insert_command("Enter")()
             func()
@@ -3606,6 +3608,8 @@ def configure(keymap):
 
     def lw_reset_search(func):
         def _func():
+            if keyhac_version == 2:
+                setImeStatus(0)
             func()
             fakeymacs.lw_is_searching = False
         return _func
