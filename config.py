@@ -6,7 +6,7 @@
 ##  Windows の操作を Emacs のキーバインドで行うための設定（Keyhac版）
 #########################################################################
 
-fakeymacs_version = "20261029_03"
+fakeymacs_version = "20261110_02"
 
 import time
 import os
@@ -56,7 +56,14 @@ except:
     from keyhac.ui.candidate_row import CandidateRow
     from puikit import DEFAULT_STYLE, Font, Style
 
-    # WinInputHook.SLOW_CALLBACK_SECONDS = 1.0
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as key:
+            value, reg_type = winreg.QueryValueEx(key, "LowLevelHooksTimeout")
+            if value > 1000:
+                value = 1000
+            WinInputHook.SLOW_CALLBACK_SECONDS = value / 1000
+    except:
+        pass
 
     VK_A          = WIN_VK["A"]
     VK_Z          = WIN_VK["Z"]
@@ -1221,6 +1228,8 @@ def configure(keymap):
                     # クリップボードの監視用のフックを有効にする
                     keymap.clipboard_history.enableHook(True)
                     fakeymacs.clipboard_hook = True
+            else:
+                fakeymacs.clipboard_hook = False
 
             if fc.correct_ime_status:
                 if fc.ime == "Google_IME":
@@ -1241,9 +1250,17 @@ def configure(keymap):
             else:
                 keymap_base[d_ctrl] = d_ctrl
 
-            if is_task_switching_window(window) or is_list_window(window):
+            if is_task_switching_window(window):
                 fakeymacs.is_base_target = True
                 fakeymacs.keymap_selected1 = True
+
+            elif is_list_window(window):
+                fakeymacs.is_base_target = True
+
+                if keyhac_version == 1:
+                    fakeymacs.keymap_selected1 = True
+                else:
+                    fakeymacs.keymap_selected1 = False
 
             elif (transparent_target.match(process_name) or
                   transparent_target_class.match(class_name) or
@@ -1279,6 +1296,9 @@ def configure(keymap):
                     fakeymacs.is_emacs_target = True
 
                 elif process_name in [ s.lower() for s in fakeymacs.not_emacs_keybind]:
+                    fakeymacs.is_emacs_target = False
+
+                elif is_list_window(window):
                     fakeymacs.is_emacs_target = False
 
                 elif (emacs_target[0].match(process_name) or
@@ -1318,6 +1338,9 @@ def configure(keymap):
                 if process_name in [ s.lower() for s in fakeymacs.not_ime_keybind]:
                     setImeStatus(0)
                     fakeymacs.is_ime_target = False
+
+                elif is_list_window(window):
+                    fakeymacs.is_ime_target = True
 
                 elif (ime_target[0].match(process_name) or
                     any(checkWindow(*app, window=window) for app in ime_target[1])):
@@ -3551,7 +3574,11 @@ def configure(keymap):
         else:
             return False
 
-    keymap_lw = keymap.defineWindowKeymap(check_func=is_list_window)
+    if fc.use_emacs_ime_mode:
+        keymap_lw = keymap.defineWindowKeymap(check_func=lambda wnd: (is_list_window(wnd) and
+                                                                      not is_emacs_ime_mode(wnd)))
+    else:
+        keymap_lw = keymap.defineWindowKeymap(check_func=is_list_window)
 
     # リストウィンドウで検索が開始されると True になる
     fakeymacs.lw_is_searching = False
